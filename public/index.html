@@ -12,29 +12,39 @@
     .header-divider { width: 1px; height: 12px; background: #333; }
     .header-title { font-size: 16px; color: #aaa49e; }
     .header-tagline { margin-left: auto; font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.18em; }
-    main { max-width: 1060px; margin: 0 auto; padding: 40px 36px; }
+    main { max-width: 1200px; margin: 0 auto; padding: 40px 36px; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; align-items: start; }
-    @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } main { padding: 24px 20px; } }
-    #dropzone { border: 1px solid #2a2a2a; border-radius: 2px; padding: 72px 36px; text-align: center; cursor: pointer; transition: all 0.15s; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } main { padding: 24px 20px; } }
+    #dropzone { border: 1px solid #2a2a2a; border-radius: 2px; padding: 48px 36px; text-align: center; cursor: pointer; transition: all 0.15s; }
     #dropzone:hover, #dropzone.drag { border-color: #555; background: #0e0e0e; }
-    .drop-arrow { font-size: 26px; opacity: 0.25; margin-bottom: 16px; }
-    .drop-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.18em; margin-bottom: 5px; }
+    .drop-arrow { font-size: 24px; opacity: 0.25; margin-bottom: 14px; }
+    .drop-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.18em; margin-bottom: 4px; }
     .drop-sub { font-size: 11px; color: #444; }
-    .standards { margin-top: 32px; border-top: 1px solid #222; padding-top: 22px; }
-    .standards-title { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.18em; margin-bottom: 12px; }
-    .standard-item { display: flex; gap: 9px; margin-bottom: 8px; align-items: flex-start; }
-    .standard-dot { width: 3px; height: 3px; background: #444; border-radius: 50%; margin-top: 8px; flex-shrink: 0; }
-    .standard-text { font-size: 12px; color: #666; line-height: 1.7; font-style: italic; }
-    #preview-img { width: 100%; display: block; border-radius: 2px; max-height: 510px; object-fit: contain; background: #0f0f0f; margin-bottom: 13px; }
-    .btn-row { display: flex; gap: 9px; }
+    #preview-img { width: 100%; display: block; border-radius: 2px; max-height: 400px; object-fit: contain; background: #0f0f0f; margin-bottom: 16px; }
+    .shot-info { margin-top: 18px; border-top: 1px solid #1e1e1e; padding-top: 18px; }
+    .shot-info-title { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 14px; }
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 5px; }
+    .field input, .field select, .field textarea { width: 100%; padding: 8px 10px; background: #0f0f0f; border: 1px solid #1e1e1e; border-radius: 2px; color: #c8c4be; font-size: 12px; font-family: 'Georgia', serif; outline: none; transition: border-color 0.15s; }
+    .field input:focus, .field textarea:focus { border-color: #3a3a3a; }
+    .field textarea { resize: vertical; min-height: 60px; line-height: 1.6; }
+    .field select { cursor: pointer; }
+    .field select option { background: #111; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn-row { display: flex; gap: 9px; margin-top: 14px; }
     .btn-primary { flex: 1; padding: 13px; background: #e2ddd7; color: #090909; border: none; border-radius: 2px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; cursor: pointer; font-family: 'Georgia', serif; transition: all 0.15s; }
     .btn-primary:disabled { background: #1a1a1a; color: #444; cursor: not-allowed; }
     .btn-secondary { padding: 13px 16px; background: transparent; color: #555; border: 1px solid #2a2a2a; border-radius: 2px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; cursor: pointer; font-family: 'Georgia', serif; }
     .error-box { margin-top: 10px; padding: 10px 12px; background: #120808; border: 1px solid #2a0e0e; border-radius: 2px; font-size: 12px; color: #ef4444; }
+    .standards { margin-top: 24px; border-top: 1px solid #1a1a1a; padding-top: 18px; }
+    .standards-title { font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 0.18em; margin-bottom: 10px; }
+    .standard-item { display: flex; gap: 9px; margin-bottom: 7px; align-items: flex-start; }
+    .standard-dot { width: 3px; height: 3px; background: #333; border-radius: 50%; margin-top: 8px; flex-shrink: 0; }
+    .standard-text { font-size: 11px; color: #555; line-height: 1.7; font-style: italic; }
     .results-label { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.18em; margin-bottom: 24px; }
-    .section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #151515; }
+    .section { margin-bottom: 22px; padding-bottom: 22px; border-bottom: 1px solid #141414; }
     .section:last-child { border-bottom: none; }
-    .section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+    .section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
     .section-bar { width: 3px; height: 12px; border-radius: 1px; flex-shrink: 0; }
     .section-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; }
     .section-content { font-size: 13px; line-height: 1.85; color: #7a7068; padding-left: 11px; }
@@ -48,7 +58,7 @@
     @keyframes dot { 0%,100%{opacity:.2;transform:scale(1)} 50%{opacity:1;transform:scale(1.4)} }
     .placeholder { padding: 52px 0; text-align: center; }
     .placeholder-text { font-size: 11px; color: #444; text-transform: uppercase; letter-spacing: 0.18em; }
-    .placeholder-sub { margin-top: 7px; font-size: 11px; color: #3a3a3a; font-style: italic; }
+    .placeholder-sub { margin-top: 7px; font-size: 11px; color: #333; font-style: italic; }
     #file-input { display: none; }
   </style>
 </head>
@@ -63,19 +73,93 @@
   <div class="grid">
     <div id="left-col">
       <div id="dropzone" onclick="document.getElementById('file-input').click()">
-        <div class="drop-arrow">↑</div>
+        <div class="drop-arrow">&#8593;</div>
         <div class="drop-label">Drop your photo here</div>
         <div class="drop-sub">or click to browse</div>
       </div>
       <input type="file" id="file-input" accept="image/*" />
+
       <div id="preview-section" style="display:none;">
         <img id="preview-img" src="" alt="Upload" />
+
+        <div class="shot-info">
+          <div class="shot-info-title">Tell the AI about this shot</div>
+
+          <div class="field-row">
+            <div class="field">
+              <label>Number of lights</label>
+              <select id="num-lights">
+                <option value="">Not specified</option>
+                <option value="Natural light only">Natural light only</option>
+                <option value="1 light">1 light</option>
+                <option value="2 lights">2 lights</option>
+                <option value="3 lights">3 lights</option>
+                <option value="4+ lights">4+ lights</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Light type</label>
+              <select id="light-type">
+                <option value="">Not specified</option>
+                <option value="Strobe">Strobe</option>
+                <option value="Speedlight / flash">Speedlight / flash</option>
+                <option value="Continuous LED">Continuous LED</option>
+                <option value="Natural / window light">Natural / window light</option>
+                <option value="Mixed">Mixed</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Modifiers used</label>
+            <input type="text" id="modifiers" placeholder="e.g. large softbox, beauty dish, octobox, bare bulb, reflector..." />
+          </div>
+
+          <div class="field">
+            <label>Creative elements / special effects</label>
+            <input type="text" id="creative" placeholder="e.g. metallic body paint, baby oil, glitter, water, smoke, color gels..." />
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label>Shoot type</label>
+              <select id="shoot-type">
+                <option value="">Not specified</option>
+                <option value="Fitness / physique">Fitness / physique</option>
+                <option value="Editorial / fashion">Editorial / fashion</option>
+                <option value="Fine art / conceptual">Fine art / conceptual</option>
+                <option value="Portrait / headshot">Portrait / headshot</option>
+                <option value="Boudoir / implied">Boudoir / implied</option>
+                <option value="Commercial / product">Commercial / product</option>
+                <option value="Lifestyle / documentary">Lifestyle / documentary</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Post-processing level</label>
+              <select id="post-processing">
+                <option value="">Not specified</option>
+                <option value="Raw / unedited">Raw / unedited</option>
+                <option value="Light edit — basic exposure and color">Light edit</option>
+                <option value="Medium edit — retouched, color graded">Medium edit</option>
+                <option value="Heavy edit — significant retouching, compositing, or artistic processing">Heavy edit</option>
+                <option value="Final delivery image — fully retouched and graded">Final delivery</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Anything else the AI should know</label>
+            <textarea id="extra-context" placeholder="e.g. shadows intentionally lifted in edit, shot on location, model is a beginner, inspired by a specific style, intentional mood..."></textarea>
+          </div>
+        </div>
+
         <div class="btn-row">
           <button class="btn-primary" id="critique-btn" onclick="runCritique()">Critique This Photo</button>
           <button class="btn-secondary" onclick="resetPhoto()">New</button>
         </div>
         <div id="error-box" class="error-box" style="display:none;"></div>
       </div>
+
       <div class="standards">
         <div class="standards-title">The Standard</div>
         <div class="standard-item"><div class="standard-dot"></div><div class="standard-text">Lighting evaluated on whether it sculpts or flattens.</div></div>
@@ -84,10 +168,11 @@
         <div class="standard-item"><div class="standard-dot"></div><div class="standard-text">Your gear is not the reason your photos look flat.</div></div>
       </div>
     </div>
+
     <div id="right-col">
       <div class="placeholder" id="placeholder">
         <div class="placeholder-text">Upload a photo to begin.</div>
-        <div class="placeholder-sub">No sugarcoating. No cheerleading.</div>
+        <div class="placeholder-sub">Fill in shot details for a more accurate critique.</div>
       </div>
       <div class="loading" id="loading" style="display:none;">
         <div class="loading-text">Reading the frame...</div>
@@ -97,50 +182,54 @@
     </div>
   </div>
 </main>
-<script>
-  let imageBase64 = null;
-  let imageMimeType = null;
 
-  const SECTION_COLORS = {
+<script>
+  var imageBase64 = null;
+  var imageMimeType = null;
+
+  var SECTION_COLORS = {
     "WHAT'S WORKING": "#4ade80",
     "LIGHTING": "#f97316",
     "POSING": "#60a5fa",
     "COMPOSITION": "#a78bfa",
     "STORY / IMPACT": "#f472b6",
-    "YOUR ONE PRIORITY": "#ef4444",
+    "YOUR ONE PRIORITY": "#ef4444"
   };
 
-  const dropzone = document.getElementById('dropzone');
-  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
-  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
-  dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('drag'); if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
-  document.getElementById('file-input').addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+  var dropzone = document.getElementById('dropzone');
+  dropzone.addEventListener('dragover', function(e) { e.preventDefault(); dropzone.classList.add('drag'); });
+  dropzone.addEventListener('dragleave', function() { dropzone.classList.remove('drag'); });
+  dropzone.addEventListener('drop', function(e) {
+    e.preventDefault(); dropzone.classList.remove('drag');
+    if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+  });
+  document.getElementById('file-input').addEventListener('change', function(e) {
+    if (e.target.files[0]) loadFile(e.target.files[0]);
+  });
 
   function compressImage(file, callback) {
-    const canvas = document.createElement('canvas');
-    const img = new Image();
-    const url = URL.createObjectURL(file);
+    var canvas = document.createElement('canvas');
+    var img = new Image();
+    var url = URL.createObjectURL(file);
     img.onload = function() {
       URL.revokeObjectURL(url);
-      const MAX = 1600;
-      let w = img.width, h = img.height;
+      var MAX = 1400;
+      var w = img.width, h = img.height;
       if (w > MAX || h > MAX) {
         if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
         else { w = Math.round(w * MAX / h); h = MAX; }
       }
       canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      callback(dataUrl.split(',')[1], 'image/jpeg');
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', 0.82).split(',')[1], 'image/jpeg');
     };
     img.src = url;
   }
 
   function loadFile(file) {
     if (!file.type.startsWith('image/')) { alert('Image files only.'); return; }
-    const reader = new FileReader();
-    reader.onload = e => {
+    var reader = new FileReader();
+    reader.onload = function(e) {
       document.getElementById('preview-img').src = e.target.result;
       document.getElementById('dropzone').style.display = 'none';
       document.getElementById('preview-section').style.display = 'block';
@@ -148,85 +237,99 @@
       document.getElementById('results').style.display = 'none';
       document.getElementById('error-box').style.display = 'none';
       document.getElementById('critique-btn').textContent = 'Critique This Photo';
-      compressImage(file, (b64, mime) => {
-        imageBase64 = b64;
-        imageMimeType = mime;
-      });
+      compressImage(file, function(b64, mime) { imageBase64 = b64; imageMimeType = mime; });
     };
     reader.readAsDataURL(file);
   }
 
   function resetPhoto() {
     imageBase64 = null; imageMimeType = null;
-    document.getElementById('dropzone').style.display = 'block';
-    document.getElementById('preview-section').style.display = 'none';
+    ['dropzone'].forEach(function(id) { document.getElementById(id).style.display = 'block'; });
+    ['preview-section','results','loading','error-box'].forEach(function(id) { document.getElementById(id).style.display = 'none'; });
     document.getElementById('placeholder').style.display = 'block';
-    document.getElementById('results').style.display = 'none';
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('error-box').style.display = 'none';
     document.getElementById('file-input').value = '';
+    ['num-lights','light-type','shoot-type','post-processing'].forEach(function(id) { document.getElementById(id).value = ''; });
+    ['modifiers','creative','extra-context'].forEach(function(id) { document.getElementById(id).value = ''; });
   }
 
-  async function runCritique() {
-    if (!imageBase64) return;
-    const btn = document.getElementById('critique-btn');
+  function buildShotContext() {
+    var parts = [];
+    var fields = [
+      ['num-lights', 'Lights used'],
+      ['light-type', 'Light type'],
+      ['modifiers', 'Modifiers'],
+      ['creative', 'Creative elements / special effects'],
+      ['shoot-type', 'Shoot type'],
+      ['post-processing', 'Post-processing level'],
+      ['extra-context', 'Additional context']
+    ];
+    for (var i = 0; i < fields.length; i++) {
+      var val = document.getElementById(fields[i][0]).value.trim();
+      if (val) parts.push(fields[i][1] + ': ' + val);
+    }
+    return parts.length ? parts.join('\n') : null;
+  }
+
+  function runCritique() {
+    if (!imageBase64) { showError('Image still loading, please wait a moment.'); return; }
+    var btn = document.getElementById('critique-btn');
     btn.disabled = true; btn.textContent = 'Analyzing...';
     document.getElementById('loading').style.display = 'block';
     document.getElementById('results').style.display = 'none';
     document.getElementById('placeholder').style.display = 'none';
     document.getElementById('error-box').style.display = 'none';
-    try {
-      const res = await fetch('/api/critique', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64, mimeType: imageMimeType })
-      });
-      const data = await res.json();
+
+    fetch('/api/critique', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64: imageBase64, mimeType: imageMimeType, shotContext: buildShotContext() })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
       if (data.error) throw new Error(data.error);
       renderCritique(data.critique);
-    } catch (err) {
-      const errBox = document.getElementById('error-box');
-      errBox.textContent = 'Error: ' + err.message;
-      errBox.style.display = 'block';
+    })
+    .catch(function(err) {
+      showError('Error: ' + err.message);
       document.getElementById('placeholder').style.display = 'block';
-    } finally {
+    })
+    .finally(function() {
       btn.disabled = false; btn.textContent = 'Re-Critique';
       document.getElementById('loading').style.display = 'none';
-    }
+    });
+  }
+
+  function showError(msg) {
+    var box = document.getElementById('error-box');
+    box.textContent = msg; box.style.display = 'block';
   }
 
   function parseCritique(text) {
-    const titles = ["WHAT'S WORKING","LIGHTING","POSING","COMPOSITION","STORY / IMPACT","YOUR ONE PRIORITY"];
-    const sections = [];
-    for (let i = 0; i < titles.length; i++) {
-      const marker = '**' + titles[i] + '**';
-      const next = titles[i + 1] ? '**' + titles[i + 1] + '**' : null;
-      const start = text.indexOf(marker);
+    var titles = ["WHAT'S WORKING","LIGHTING","POSING","COMPOSITION","STORY / IMPACT","YOUR ONE PRIORITY"];
+    var sections = [];
+    for (var i = 0; i < titles.length; i++) {
+      var marker = '**' + titles[i] + '**';
+      var next = titles[i+1] ? '**' + titles[i+1] + '**' : null;
+      var start = text.indexOf(marker);
       if (start === -1) continue;
-      const end = next ? text.indexOf(next, start + 1) : text.length;
-      sections.push({ title: titles[i], content: text.slice(start + marker.length, end === -1 ? text.length : end).trim() });
+      var end = next ? text.indexOf(next, start+1) : text.length;
+      sections.push({ title: titles[i], content: text.slice(start+marker.length, end===-1?text.length:end).trim() });
     }
     return sections.length ? sections : [{ title: 'CRITIQUE', content: text }];
   }
 
   function renderCritique(text) {
-    const sections = parseCritique(text);
-    const container = document.getElementById('results');
+    var sections = parseCritique(text);
+    var container = document.getElementById('results');
     container.innerHTML = '<div class="results-label">Critique</div>';
-    sections.forEach(s => {
-      const color = SECTION_COLORS[s.title] || '#888';
-      const isPriority = s.title === 'YOUR ONE PRIORITY';
-      const div = document.createElement('div');
-      div.className = 'section' + (isPriority ? ' section-priority' : '');
-      div.innerHTML = `
-        <div class="section-header">
-          <div class="section-bar" style="background:${color}"></div>
-          <div class="section-title" style="color:${color}">${s.title}</div>
-        </div>
-        <div class="section-content">${s.content}</div>
-      `;
+    for (var i = 0; i < sections.length; i++) {
+      var s = sections[i];
+      var color = SECTION_COLORS[s.title] || '#888';
+      var div = document.createElement('div');
+      div.className = 'section' + (s.title === 'YOUR ONE PRIORITY' ? ' section-priority' : '');
+      div.innerHTML = '<div class="section-header"><div class="section-bar" style="background:' + color + '"></div><div class="section-title" style="color:' + color + '">' + s.title + '</div></div><div class="section-content">' + s.content + '</div>';
       container.appendChild(div);
-    });
+    }
     container.style.display = 'block';
   }
 </script>
