@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photo Critique — Brett Seeley</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #090909;
+      color: #e2ddd7;
+      font-family: 'Georgia', serif;
+    }
+
+    header {
+      border-bottom: 1px solid #181818;
+      padding: 20px 36px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-brand {
+      font-size: 10px;
+      color: #3a3a3a;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+    }
+
+    .header-divider {
+      width: 1px;
+      height: 12px;
+      background: #222;
+    }
+
+    .header-title {
+      font-size: 16px;
+      color: #aaa49e;
+    }
+
+    .header-tagline {
+      margin-left: auto;
+      font-size: 10px;
+      color: #252525;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+    }
+
+    main {
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 40px 36px;
+    }
+
+    /* Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 44px;
+      align-items: start;
+    }
+
+    @media (max-width: 700px) {
+      .grid { grid-template-columns: 1fr; }
+      main { padding: 24px 20px; }
+    }
+
+    /* Drop zone */
+    #dropzone {
+      border: 1px solid #1c1c1c;
+      border-radius: 2px;
+      padding: 72px 36px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    #dropzone:hover, #dropzone.drag { border-color: #444; background: #0e0e0e; }
+
+    .drop-arrow { font-size: 26px; opacity: 0.15; margin-bottom: 16px; }
+    .drop-label { font-size: 11px; color: #383838; text-transform: uppercase; letter-spacing: 0.18em; margin-bottom: 5px; }
+    .drop-sub { font-size: 11px; color: #222; }
+
+    /* Standards */
+    .standards { margin-top: 32px; border-top: 1px solid #121212; padding-top: 22px; }
+    .standards-title { font-size: 10px; color: #202020; text-transform: uppercase; letter-spacing: 0.18em; margin-bottom: 12px; }
+    .standard-item { display: flex; gap: 9px; margin-bottom: 8px; align-items: flex-start; }
+    .standard-dot { width: 3px; height: 3px; background: #1e1e1e; border-radius: 50%; margin-top: 8px; flex-shrink: 0; }
+    .standard-text { font-size: 11px; color: #242424; line-height: 1.7; font-style: italic; }
+
+    /* Image preview */
+    #preview-img {
+      width: 100%;
+      display: block;
+      border-radius: 2px;
+      max-height: 510px;
+      object-fit: contain;
+      background: #0f0f0f;
+      margin-bottom: 13px;
+    }
+
+    .btn-row { display: flex; gap: 9px; }
+
+    .btn-primary {
+      flex: 1;
+      padding: 13px;
+      background: #e2ddd7;
+      color: #090909;
+      border: none;
+      border-radius: 2px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      cursor: pointer;
+      font-family: 'Georgia', serif;
+      transition: all 0.15s;
+    }
+
+    .btn-primary:disabled {
+      background: #141414;
+      color: #2a2a2a;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      padding: 13px 16px;
+      background: transparent;
+      color: #383838;
+      border: 1px solid #1a1a1a;
+      border-radius: 2px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      cursor: pointer;
+      font-family: 'Georgia', serif;
+    }
+
+    .error-box {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: #120808;
+      border: 1px solid #2a0e0e;
+      border-radius: 2px;
+      font-size: 12px;
+      color: #ef4444;
+    }
+
+    /* Results */
+    .results-label {
+      font-size: 10px;
+      color: #252525;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      margin-bottom: 24px;
+    }
+
+    .section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #0f0f0f; }
+    .section:last-child { border-bottom: none; }
+
+    .section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+    .section-bar { width: 3px; height: 12px; border-radius: 1px; flex-shrink: 0; }
+    .section-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; }
+    .section-content { font-size: 13px; line-height: 1.85; color: #5e5850; padding-left: 11px; }
+
+    .section-priority .section-content {
+      color: #e2ddd7;
+      padding: 13px 15px;
+      background: #0e0e0e;
+      border: 1px solid #181818;
+      border-radius: 2px;
+    }
+
+    /* Loading */
+    .loading { padding: 52px 0; text-align: center; }
+    .loading-text { font-size: 11px; color: #252525; text-transform: uppercase; letter-spacing: 0.18em; margin-bottom: 18px; }
+    .dots { display: flex; justify-content: center; gap: 5px; }
+    .dot { width: 4px; height: 4px; background: #252525; border-radius: 50%; animation: dot 1.2s ease-in-out infinite; }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes dot {
+      0%, 100% { opacity: .15; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.4); }
+    }
+
+    .placeholder { padding: 52px 0; text-align: center; }
+    .placeholder-text { font-size: 11px; color: #1e1e1e; text-transform: uppercase; letter-spacing: 0.18em; }
+    .placeholder-sub { margin-top: 7px; font-size: 11px; color: #1a1a1a; font-style: italic; }
+
+    #file-input { display: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="header-brand">Brett Seeley</span>
+  <span class="header-divider"></span>
+  <span class="header-title">Photo Critique Engine</span>
+  <span class="header-tagline">No sugarcoating</span>
+</header>
+
+<main>
+  <div class="grid">
+    <!-- Left -->
+    <div id="left-col">
+      <div id="dropzone" onclick="document.getElementById('file-input').click()">
+        <div class="drop-arrow">↑</div>
+        <div class="drop-label">Drop your photo here</div>
+        <div class="drop-sub">or click to browse</div>
+      </div>
+
+      <input type="file" id="file-input" accept="image/*" />
+
+      <div id="preview-section" style="display:none;">
+        <img id="preview-img" src="" alt="Upload" />
+        <div class="btn-row">
+          <button class="btn-primary" id="critique-btn" onclick="runCritique()">Critique This Photo</button>
+          <button class="btn-secondary" onclick="resetPhoto()">New</button>
+        </div>
+        <div id="error-box" class="error-box" style="display:none;"></div>
+      </div>
+
+      <div class="standards">
+        <div class="standards-title">The Standard</div>
+        <div class="standard-item"><div class="standard-dot"></div><div class="standard-text">Lighting evaluated on whether it sculpts or flattens.</div></div>
+        <div class="standard-item"><div class="standard-dot"></div><div class="standard-text">Posing evaluated on tension, angles, and intention.</div></div>
+        <div class="standard-item"><div class="standard-dot"></div><div class="standard-text">Story evaluated on whether it earns a stopped scroll.</div></div>
+        <div class="standard-item"><div class="standard-dot"></div><div class="standard-text">Your gear is not the reason your photos look flat.</div></div>
+      </div>
+    </div>
+
+    <!-- Right -->
+    <div id="right-col">
+      <div class="placeholder" id="placeholder">
+        <div class="placeholder-text">Upload a photo to begin.</div>
+        <div class="placeholder-sub">No sugarcoating. No cheerleading.</div>
+      </div>
+      <div class="loading" id="loading" style="display:none;">
+        <div class="loading-text">Reading the frame...</div>
+        <div class="dots">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+      </div>
+      <div id="results" style="display:none;"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+  let imageBase64 = null;
+  let imageMimeType = null;
+
+  const SECTION_COLORS = {
+    "WHAT'S WORKING": "#4ade80",
+    "LIGHTING": "#f97316",
+    "POSING": "#60a5fa",
+    "COMPOSITION": "#a78bfa",
+    "STORY / IMPACT": "#f472b6",
+    "YOUR ONE PRIORITY": "#ef4444",
+  };
+
+  // Drag and drop
+  const dropzone = document.getElementById('dropzone');
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('drag');
+    const file = e.dataTransfer.files[0];
+    if (file) loadFile(file);
+  });
+
+  document.getElementById('file-input').addEventListener('change', e => {
+    if (e.target.files[0]) loadFile(e.target.files[0]);
+  });
+
+  function loadFile(file) {
+    if (!file.type.startsWith('image/')) { alert('Image files only.'); return; }
+    imageMimeType = file.type || 'image/jpeg';
+    const reader = new FileReader();
+    reader.onload = e => {
+      imageBase64 = e.target.result.split(',')[1];
+      document.getElementById('preview-img').src = e.target.result;
+      document.getElementById('dropzone').style.display = 'none';
+      document.getElementById('preview-section').style.display = 'block';
+      document.getElementById('placeholder').style.display = 'flex';
+      document.getElementById('results').style.display = 'none';
+      document.getElementById('error-box').style.display = 'none';
+      document.getElementById('critique-btn').textContent = 'Critique This Photo';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function resetPhoto() {
+    imageBase64 = null;
+    imageMimeType = null;
+    document.getElementById('dropzone').style.display = 'block';
+    document.getElementById('preview-section').style.display = 'none';
+    document.getElementById('placeholder').style.display = 'block';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error-box').style.display = 'none';
+    document.getElementById('file-input').value = '';
+  }
+
+  async function runCritique() {
+    if (!imageBase64) return;
+    const btn = document.getElementById('critique-btn');
+    btn.disabled = true;
+    btn.textContent = 'Analyzing...';
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('placeholder').style.display = 'none';
+    document.getElementById('error-box').style.display = 'none';
+
+    try {
+      const res = await fetch('/api/critique', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64, mimeType: imageMimeType })
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      renderCritique(data.critique);
+    } catch (err) {
+      const errBox = document.getElementById('error-box');
+      errBox.textContent = 'Error: ' + err.message;
+      errBox.style.display = 'block';
+      document.getElementById('placeholder').style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Re-Critique';
+      document.getElementById('loading').style.display = 'none';
+    }
+  }
+
+  function parseCritique(text) {
+    const titles = ["WHAT'S WORKING","LIGHTING","POSING","COMPOSITION","STORY / IMPACT","YOUR ONE PRIORITY"];
+    const sections = [];
+    for (let i = 0; i < titles.length; i++) {
+      const marker = '**' + titles[i] + '**';
+      const next = titles[i + 1] ? '**' + titles[i + 1] + '**' : null;
+      const start = text.indexOf(marker);
+      if (start === -1) continue;
+      const end = next ? text.indexOf(next, start + 1) : text.length;
+      sections.push({ title: titles[i], content: text.slice(start + marker.length, end === -1 ? text.length : end).trim() });
+    }
+    return sections.length ? sections : [{ title: 'CRITIQUE', content: text }];
+  }
+
+  function renderCritique(text) {
+    const sections = parseCritique(text);
+    const container = document.getElementById('results');
+    container.innerHTML = '<div class="results-label">Critique</div>';
+
+    sections.forEach((s, i) => {
+      const color = SECTION_COLORS[s.title] || '#666';
+      const isPriority = s.title === 'YOUR ONE PRIORITY';
+      const div = document.createElement('div');
+      div.className = 'section' + (isPriority ? ' section-priority' : '');
+      div.innerHTML = `
+        <div class="section-header">
+          <div class="section-bar" style="background:${color}"></div>
+          <div class="section-title" style="color:${color}">${s.title}</div>
+        </div>
+        <div class="section-content">${s.content}</div>
+      `;
+      container.appendChild(div);
+    });
+
+    container.style.display = 'block';
+  }
+</script>
+</body>
+</html>
