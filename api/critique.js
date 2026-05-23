@@ -138,7 +138,6 @@ module.exports = async function handler(req, res) {
       const imageBuffer = Buffer.from(imageBase64, 'base64');
       const filename = `critiques/${Date.now()}-${name.replace(/\s+/g, '-')}.jpg`;
       const blob = await put(filename, imageBuffer, {
-        access: 'public',
         contentType: mimeType,
         token: process.env.BLOB_READ_WRITE_TOKEN,
       });
