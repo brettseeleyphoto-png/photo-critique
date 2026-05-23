@@ -202,7 +202,8 @@
   var imageMimeType = null;
   var originalFilename = null;
   var originalMimeType = null;
-  var MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+  var MAX_ORIGINAL_BYTES = 25 * 1024 * 1024;
+  var MAX_COMPRESSED_BYTES = 4 * 1024 * 1024;
   var ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
   var SECTION_COLORS = {
@@ -250,7 +251,7 @@
 
   function loadFile(file) {
     if (ALLOWED_TYPES.indexOf(file.type) === -1) { alert('Please upload a JPG, PNG, or WebP image.'); return; }
-    if (file.size > MAX_UPLOAD_BYTES) { alert('Please upload an image under 8 MB.'); return; }
+    if (file.size > MAX_ORIGINAL_BYTES) { alert('Please upload an image under 25 MB.'); return; }
     imageBase64 = null;
     imageMimeType = null;
     originalFilename = file.name;
@@ -266,6 +267,12 @@
       document.getElementById('critique-btn').textContent = 'Critique This Photo';
       document.getElementById('critique-btn').disabled = true;
       compressImage(file, function(b64, mime) {
+        var compressedBytes = Math.ceil((b64.length * 3) / 4);
+        if (compressedBytes > MAX_COMPRESSED_BYTES) {
+          showError('Image is still too large after resizing. Try a smaller file.');
+          document.getElementById('critique-btn').disabled = true;
+          return;
+        }
         imageBase64 = b64;
         imageMimeType = mime;
         document.getElementById('critique-btn').disabled = false;
