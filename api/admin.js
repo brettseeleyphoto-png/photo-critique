@@ -39,6 +39,9 @@ async function ensureSchema(sql) {
   await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_correction TEXT`;
   await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_correction_status TEXT DEFAULT 'pending'`;
   await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_corrected_at TIMESTAMP`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_email_sent_at TIMESTAMP`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_email_id TEXT`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_email_error TEXT`;
 }
 
 module.exports = async function handler(req, res) {
@@ -59,7 +62,8 @@ module.exports = async function handler(req, res) {
         id, created_at, name, email, num_lights, light_type, modifiers, creative, shoot_type, post_processing, extra_context,
         image_url, image_pathname, image_mime_type, image_size_bytes, original_filename, original_mime_type,
         storage_provider, storage_error, ai_feedback_ratings, feedback_submitted_at,
-        brett_correction, brett_correction_status, brett_corrected_at, critique
+        brett_correction, brett_correction_status, brett_corrected_at, brett_email_sent_at, brett_email_id, brett_email_error,
+        critique
       FROM critiques
       ORDER BY created_at DESC
       LIMIT 200

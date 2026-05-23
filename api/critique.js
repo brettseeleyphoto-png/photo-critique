@@ -113,6 +113,9 @@ async function initDb(sql) {
       brett_correction TEXT,
       brett_correction_status TEXT DEFAULT 'pending',
       brett_corrected_at TIMESTAMP,
+      brett_email_sent_at TIMESTAMP,
+      brett_email_id TEXT,
+      brett_email_error TEXT,
       critique TEXT NOT NULL
     )
   `;
@@ -129,6 +132,9 @@ async function initDb(sql) {
   await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_correction TEXT`;
   await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_correction_status TEXT DEFAULT 'pending'`;
   await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_corrected_at TIMESTAMP`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_email_sent_at TIMESTAMP`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_email_id TEXT`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_email_error TEXT`;
 }
 
 function sanitizeFilename(value) {

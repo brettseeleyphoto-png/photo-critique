@@ -171,8 +171,8 @@
             '<div class="brett-review">' +
               '<div class="critique-label">Brett Updated Review</div>' +
               '<textarea id="brett-review-' + s.id + '" placeholder="Write Brett&apos;s corrected human review here.">' + escTextarea(s.brett_correction) + '</textarea>' +
-              '<button class="mini-btn" onclick="saveBrettReview(' + s.id + ')">Save Updated Review</button>' +
-              '<div class="save-status" id="save-status-' + s.id + '">' + reviewStatusText(s) + '</div>' +
+              '<button class="mini-btn" onclick="saveBrettReview(' + s.id + ')">Save + Email Updated Review</button>' +
+              '<div class="save-status" id="save-status-' + s.id + '">' + reviewStatusText(s) + emailStatusText(s) + '</div>' +
             '</div>' +
           '</div>' +
         '</div>';
@@ -227,6 +227,12 @@
     return s.brett_correction_status === 'reviewed' ? 'Saved' : '';
   }
 
+  function emailStatusText(s) {
+    if (s.brett_email_sent_at) return '<br>Email sent ' + new Date(s.brett_email_sent_at).toLocaleString();
+    if (s.brett_email_error) return '<br>Email not sent: ' + esc(s.brett_email_error);
+    return '';
+  }
+
   function saveBrettReview(id) {
     var textarea = document.getElementById('brett-review-' + id);
     var status = document.getElementById('save-status-' + id);
@@ -244,8 +250,16 @@
     .then(readJsonResponse)
     .then(function(data) {
       if (data.error) throw new Error(data.error);
-      status.className = 'save-status ok';
-      status.textContent = 'Updated review saved.';
+      if (data.emailSent) {
+        status.className = 'save-status ok';
+        status.textContent = 'Updated review saved and emailed.';
+      } else if (data.emailError) {
+        status.className = 'save-status err';
+        status.textContent = 'Updated review saved, but email was not sent: ' + data.emailError;
+      } else {
+        status.className = 'save-status ok';
+        status.textContent = 'Updated review saved.';
+      }
     })
     .catch(function(e) {
       status.className = 'save-status err';
