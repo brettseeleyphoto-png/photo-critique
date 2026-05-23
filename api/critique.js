@@ -1,5 +1,10 @@
 const { neon } = require('@neondatabase/serverless');
 const { put } = require('@vercel/blob');
+const crypto = require('crypto');
+
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+const BLOB_ACCESS = 'private';
 
 const BRETT_SYSTEM_PROMPT = `You are Brett Seeley's photo critique engine. Brett is a veteran fitness photographer with 17+ years of experience. You analyze photos using his exact standards and voice.
 
@@ -87,18 +92,60 @@ async function initDb(sql) {
       post_processing TEXT,
       extra_context TEXT,
       image_url TEXT,
+      image_pathname TEXT,
+      image_mime_type TEXT,
+      image_size_bytes INTEGER,
+      original_filename TEXT,
+      original_mime_type TEXT,
+      storage_provider TEXT,
+      storage_error TEXT,
+      brett_correction TEXT,
+      brett_correction_status TEXT DEFAULT 'pending',
+      brett_corrected_at TIMESTAMP,
       critique TEXT NOT NULL
     )
   `;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS image_pathname TEXT`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS image_mime_type TEXT`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS image_size_bytes INTEGER`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS original_filename TEXT`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS original_mime_type TEXT`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS storage_provider TEXT`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS storage_error TEXT`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_correction TEXT`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_correction_status TEXT DEFAULT 'pending'`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_corrected_at TIMESTAMP`;
+}
+
+function sanitizeFilename(value) {
+  return String(value || 'upload')
+    .replace(/[/\\]/g, '-')
+    .replace(/[^a-zA-Z0-9._-]/g, '-')
+    .replace(/-+/g, '-')
+    .slice(0, 80);
+}
+
+function extensionForMime(mimeType) {
+  if (mimeType === 'image/png') return 'png';
+  if (mimeType === 'image/webp') return 'webp';
+  return 'jpg';
 }
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { imageBase64, mimeType, shotContext, name, email, shotFields } = req.body;
+  const { imageBase64, mimeType, originalFilename, originalMimeType, shotContext, name, email, shotFields } = req.body;
 
   if (!imageBase64 || !mimeType) return res.status(400).json({ error: 'Missing image data' });
   if (!name || !email) return res.status(400).json({ error: 'Name and email are required' });
+  if (!ALLOWED_IMAGE_TYPES.has(mimeType)) {
+    return res.status(400).json({ error: 'Unsupported image type. Please upload a JPG, PNG, or WebP image.' });
+  }
+
+  const imageBuffer = Buffer.from(imageBase64, 'base64');
+  if (!imageBuffer.length || imageBuffer.length > MAX_IMAGE_BYTES) {
+    return res.status(413).json({ error: 'Image is too large after compression. Please upload a smaller image.' });
+  }
 
   const userMessage = shotContext
     ? 'PHOTOGRAPHER-PROVIDED CONTEXT:\n' + shotContext + '\n\nUse this context. Do not flag intentional creative or editing choices as problems.'
@@ -132,36 +179,63 @@ module.exports = async function handler(req, res) {
     const critiqueText = data?.content?.find(b => b.type === 'text')?.text;
     if (!critiqueText) return res.status(500).json({ error: 'No response from AI' });
 
-    // Save image to Blob
+    // Save image to private Vercel Blob storage for durable admin review.
     let imageUrl = null;
+    let imagePathname = null;
+    let storageError = null;
     try {
-      const imageBuffer = Buffer.from(imageBase64, 'base64');
-      const filename = `critiques/${Date.now()}-${name.replace(/\s+/g, '-')}.jpg`;
+      const safeName = sanitizeFilename(originalFilename || name);
+      const ext = extensionForMime(mimeType);
+      const filename = `critiques/${new Date().toISOString().slice(0, 10)}/${Date.now()}-${crypto.randomUUID()}-${safeName}.${ext}`;
       const blob = await put(filename, imageBuffer, {
+        access: BLOB_ACCESS,
         contentType: mimeType,
         token: process.env.BLOB_READ_WRITE_TOKEN,
       });
       imageUrl = blob.url;
+      imagePathname = blob.pathname || filename;
     } catch (blobErr) {
-      console.error('Blob save failed:', blobErr.message);
+      storageError = blobErr.message || 'Unknown Blob storage error';
+      console.error('Blob save failed:', {
+        message: storageError,
+        mimeType,
+        bytes: imageBuffer.length,
+        originalFilename,
+      });
     }
 
     // Save to Neon database
+    let dbError = null;
     try {
       const sql = neon(process.env.DATABASE_URL);
       await initDb(sql);
       const f = shotFields || {};
       await sql`
-        INSERT INTO critiques (name, email, num_lights, light_type, modifiers, creative, shoot_type, post_processing, extra_context, image_url, critique)
-        VALUES (${name}, ${email}, ${f.numLights||null}, ${f.lightType||null}, ${f.modifiers||null}, ${f.creative||null}, ${f.shootType||null}, ${f.postProcessing||null}, ${f.extraContext||null}, ${imageUrl}, ${critiqueText})
+        INSERT INTO critiques (
+          name, email, num_lights, light_type, modifiers, creative, shoot_type, post_processing, extra_context,
+          image_url, image_pathname, image_mime_type, image_size_bytes, original_filename, original_mime_type,
+          storage_provider, storage_error, critique
+        )
+        VALUES (
+          ${name}, ${email}, ${f.numLights||null}, ${f.lightType||null}, ${f.modifiers||null}, ${f.creative||null}, ${f.shootType||null}, ${f.postProcessing||null}, ${f.extraContext||null},
+          ${imageUrl}, ${imagePathname}, ${mimeType}, ${imageBuffer.length}, ${originalFilename || null}, ${originalMimeType || null},
+          ${imageUrl ? 'vercel_blob' : null}, ${storageError}, ${critiqueText}
+        )
       `;
     } catch (dbErr) {
-      console.error('DB save failed:', dbErr.message);
+      dbError = dbErr.message || 'Unknown database save error';
+      console.error('DB save failed:', dbError);
     }
 
-    return res.status(200).json({ critique: critiqueText });
+    return res.status(200).json({
+      critique: critiqueText,
+      saved: !storageError && !dbError,
+      storageError: storageError ? 'The critique was generated, but the image could not be saved for admin review.' : null,
+      saveError: dbError ? 'The critique was generated, but the submission could not be saved for admin review.' : null,
+    });
 
   } catch (err) {
+    console.error('Critique request failed:', err.message);
     return res.status(500).json({ error: err.message });
   }
 };

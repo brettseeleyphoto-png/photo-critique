@@ -40,6 +40,7 @@
     .sub-image { background: #0a0a0a; }
     .sub-image img { width: 100%; height: 100%; object-fit: cover; max-height: 320px; display: block; }
     .sub-image .no-img { padding: 40px; text-align: center; font-size: 11px; color: #2a2a2a; text-transform: uppercase; letter-spacing: 0.15em; }
+    .storage-warning { padding: 10px 12px; border-top: 1px solid #241111; color: #b45353; font-size: 11px; line-height: 1.5; }
     .sub-right { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
     .shot-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .field-item { }
@@ -132,9 +133,7 @@
         '</div>' +
         '<div class="sub-body">' +
           '<div class="sub-image">' +
-            (s.image_url
-              ? '<img src="' + esc(s.image_url) + '" alt="Submission" />'
-              : '<div class="no-img">No image saved</div>') +
+            imageMarkup(s) +
           '</div>' +
           '<div class="sub-right">' +
             '<div class="shot-fields">' +
@@ -144,6 +143,8 @@
               field('Creative Elements', s.creative) +
               field('Shoot Type', s.shoot_type) +
               field('Post-Processing', s.post_processing) +
+              field('Image Type', s.image_mime_type) +
+              field('Original File', s.original_filename) +
               (s.extra_context ? '<div class="field-item" style="grid-column:1/-1">' + field('Additional Context', s.extra_context) + '</div>' : '') +
             '</div>' +
             '<div class="critique-section">' +
@@ -163,6 +164,21 @@
   function field(label, value) {
     if (!value) return '';
     return '<div class="field-item"><div class="field-label">' + label + '</div><div class="field-value">' + esc(value) + '</div></div>';
+  }
+
+  function imageMarkup(s) {
+    var html = '';
+    if (s.image_pathname) {
+      html += '<img src="/api/image?password=' + encodeURIComponent(password) + '&pathname=' + encodeURIComponent(s.image_pathname) + '" alt="Submission" loading="lazy" />';
+    } else if (s.image_url && s.image_url.indexOf('.public.blob.vercel-storage.com') !== -1) {
+      html += '<img src="' + esc(s.image_url) + '" alt="Submission" loading="lazy" />';
+    } else {
+      html += '<div class="no-img">No image saved</div>';
+    }
+    if (s.storage_error) {
+      html += '<div class="storage-warning">Storage error: ' + esc(s.storage_error) + '</div>';
+    }
+    return html;
   }
 
   function esc(str) {

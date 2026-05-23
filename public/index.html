@@ -80,7 +80,7 @@
         <div class="drop-label">Drop your photo here</div>
         <div class="drop-sub">or click to browse</div>
       </div>
-      <input type="file" id="file-input" accept="image/*" />
+      <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" />
 
       <div id="preview-section" style="display:none;">
         <img id="preview-img" src="" alt="Upload" />
@@ -200,6 +200,10 @@
 <script>
   var imageBase64 = null;
   var imageMimeType = null;
+  var originalFilename = null;
+  var originalMimeType = null;
+  var MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+  var ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
   var SECTION_COLORS = {
     "WHAT'S WORKING": "#4ade80",
@@ -237,11 +241,20 @@
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       callback(canvas.toDataURL('image/jpeg', 0.82).split(',')[1], 'image/jpeg');
     };
+    img.onerror = function() {
+      URL.revokeObjectURL(url);
+      showError('Could not read that image. Please try a JPG, PNG, or WebP file.');
+    };
     img.src = url;
   }
 
   function loadFile(file) {
-    if (!file.type.startsWith('image/')) { alert('Image files only.'); return; }
+    if (ALLOWED_TYPES.indexOf(file.type) === -1) { alert('Please upload a JPG, PNG, or WebP image.'); return; }
+    if (file.size > MAX_UPLOAD_BYTES) { alert('Please upload an image under 8 MB.'); return; }
+    imageBase64 = null;
+    imageMimeType = null;
+    originalFilename = file.name;
+    originalMimeType = file.type;
     var reader = new FileReader();
     reader.onload = function(e) {
       document.getElementById('preview-img').src = e.target.result;
@@ -251,13 +264,19 @@
       document.getElementById('results').style.display = 'none';
       document.getElementById('error-box').style.display = 'none';
       document.getElementById('critique-btn').textContent = 'Critique This Photo';
-      compressImage(file, function(b64, mime) { imageBase64 = b64; imageMimeType = mime; });
+      document.getElementById('critique-btn').disabled = true;
+      compressImage(file, function(b64, mime) {
+        imageBase64 = b64;
+        imageMimeType = mime;
+        document.getElementById('critique-btn').disabled = false;
+      });
     };
+    reader.onerror = function() { showError('Could not read that image. Please try another file.'); };
     reader.readAsDataURL(file);
   }
 
   function resetPhoto() {
-    imageBase64 = null; imageMimeType = null;
+    imageBase64 = null; imageMimeType = null; originalFilename = null; originalMimeType = null;
     document.getElementById('dropzone').style.display = 'block';
     document.getElementById('preview-section').style.display = 'none';
     document.getElementById('placeholder').style.display = 'block';
@@ -321,6 +340,8 @@
       body: JSON.stringify({
         imageBase64: imageBase64,
         mimeType: imageMimeType,
+        originalFilename: originalFilename,
+        originalMimeType: originalMimeType,
         shotContext: buildShotContext(),
         name: name,
         email: email,
@@ -331,6 +352,8 @@
     .then(function(data) {
       if (data.error) throw new Error(data.error);
       renderCritique(data.critique);
+      if (data.storageError) showError(data.storageError);
+      if (data.saveError) showError(data.saveError);
     })
     .catch(function(err) {
       showError('Error: ' + err.message);
