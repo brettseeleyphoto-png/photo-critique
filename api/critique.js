@@ -1,3 +1,6 @@
+const { neon } = require('@neondatabase/serverless');
+const { put } = require('@vercel/blob');
+
 const BRETT_SYSTEM_PROMPT = `You are Brett Seeley's photo critique engine. Brett is a veteran fitness photographer with 17+ years of experience. You analyze photos using his exact standards and voice.
 
 CRITICAL RULES — FOLLOW THESE BEFORE WRITING ANYTHING:
@@ -6,10 +9,10 @@ CRITICAL RULES — FOLLOW THESE BEFORE WRITING ANYTHING:
 
 2. SHADOW READING IS MANDATORY. You must read shadows before making any statement about lighting. Follow this exact process:
    - Look at where shadows fall on the subject's face (under nose, cheekbones, jawline, neck)
-   - Look at where shadows fall on the body (arms, torso, legs)
+   - Look at where shadows fall on the body (arms, torso, legs, clothing)
    - Look at highlight placement — where is the brightest light landing?
    - Use shadow direction and falloff to determine light position (left, right, above, below, distance)
-   - Use shadow softness to infer modifier type (soft shadow edge = large modifier or softbox; hard shadow edge = bare bulb or small source)
+   - Use shadow softness to infer modifier type (soft shadow edge = large modifier; hard shadow edge = bare bulb or small source)
    - Only after completing shadow analysis, state your conclusion about light position
    - DO NOT assume front lighting just because the image looks evenly lit — even exposure can come from a well-placed off-axis source with a large modifier. Read the shadows on clothing, skin, and props to find the actual angle.
    - If post-processing has lifted shadows or reduced contrast, note that shadow data may be partially obscured and adjust confidence accordingly
@@ -22,24 +25,20 @@ CRITICAL RULES — FOLLOW THESE BEFORE WRITING ANYTHING:
 
 4. LIMB ACCURACY. Describe exactly where each limb is before critiquing it. Never invent or assume limb positions. If you cannot clearly see a hand or foot, say so.
 
-5. RESPECT PHOTOGRAPHER CONTEXT. If shot context is provided:
-   - Use the light count, type, and modifier to inform your shadow reading
-   - Creative elements (paint, oil, glitter, water) are intentional — never flag them as problems
-   - Post-processing level affects how much shadow data is available
-   - Shoot type sets the evaluation standard
+5. RESPECT PHOTOGRAPHER CONTEXT. If shot context is provided, use it fully. Creative elements are intentional. Post-processing level affects shadow data reliability.
 
 BRETT'S CRITIQUE FRAMEWORK:
 
 1. LIGHTING
    - State post-processing level and its effect on shadow readability
-   - Describe shadow direction, falloff, and placement on face AND body
-   - State your conclusion about light position and modifier type based on that shadow data
+   - Describe shadow direction and placement on face AND body
+   - State your conclusion about light position and modifier type
    - Evaluate whether the lighting serves the image
 
 2. POSING
    - Describe hip orientation, midsection/belly line, and shoulder line separately
    - Describe each limb accurately
-   - Evaluate weight distribution, tension, jawline, and intentionality
+   - Evaluate weight distribution, tension, jawline, intentionality
 
 3. COMPOSITION
    - Crop, framing, eye flow
@@ -52,7 +51,6 @@ BRETT'S VOICE:
 - Specific language. Describe what you see before judging it.
 - Brief on what's working. Harder on what needs fixing.
 - One clear priority at the end.
-- Tone: experienced mentor who tells the truth.
 
 FORMAT EXACTLY LIKE THIS:
 
@@ -74,17 +72,40 @@ FORMAT EXACTLY LIKE THIS:
 **YOUR ONE PRIORITY**
 [Single most important fix. Direct.]`;
 
+async function initDb(sql) {
+  await sql`
+    CREATE TABLE IF NOT EXISTS critiques (
+      id SERIAL PRIMARY KEY,
+      created_at TIMESTAMP DEFAULT NOW(),
+      name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      num_lights TEXT,
+      light_type TEXT,
+      modifiers TEXT,
+      creative TEXT,
+      shoot_type TEXT,
+      post_processing TEXT,
+      extra_context TEXT,
+      image_url TEXT,
+      critique TEXT NOT NULL
+    )
+  `;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { imageBase64, mimeType, shotContext } = req.body;
-  if (!imageBase64 || !mimeType) return res.status(400).json({ error: 'Missing imageBase64 or mimeType' });
+  const { imageBase64, mimeType, shotContext, name, email, shotFields } = req.body;
+
+  if (!imageBase64 || !mimeType) return res.status(400).json({ error: 'Missing image data' });
+  if (!name || !email) return res.status(400).json({ error: 'Name and email are required' });
 
   const userMessage = shotContext
-    ? 'PHOTOGRAPHER-PROVIDED CONTEXT:\n' + shotContext + '\n\nUse this context. Do not flag intentional creative or editing choices as problems. Use the light and modifier info to inform your shadow reading.'
+    ? 'PHOTOGRAPHER-PROVIDED CONTEXT:\n' + shotContext + '\n\nUse this context. Do not flag intentional creative or editing choices as problems.'
     : 'Critique this photo honestly. Do not hold back.';
 
   try {
+    // Run AI critique
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -108,9 +129,38 @@ module.exports = async function handler(req, res) {
 
     const data = await response.json();
     if (data.error) return res.status(400).json({ error: data.error.message });
-    const text = data?.content?.find(b => b.type === 'text')?.text;
-    if (!text) return res.status(500).json({ error: 'No text in response' });
-    return res.status(200).json({ critique: text });
+    const critiqueText = data?.content?.find(b => b.type === 'text')?.text;
+    if (!critiqueText) return res.status(500).json({ error: 'No response from AI' });
+
+    // Save image to Blob
+    let imageUrl = null;
+    try {
+      const imageBuffer = Buffer.from(imageBase64, 'base64');
+      const filename = `critiques/${Date.now()}-${name.replace(/\s+/g, '-')}.jpg`;
+      const blob = await put(filename, imageBuffer, {
+        access: 'public',
+        contentType: mimeType,
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+      });
+      imageUrl = blob.url;
+    } catch (blobErr) {
+      console.error('Blob save failed:', blobErr.message);
+    }
+
+    // Save to Neon database
+    try {
+      const sql = neon(process.env.DATABASE_URL);
+      await initDb(sql);
+      const f = shotFields || {};
+      await sql`
+        INSERT INTO critiques (name, email, num_lights, light_type, modifiers, creative, shoot_type, post_processing, extra_context, image_url, critique)
+        VALUES (${name}, ${email}, ${f.numLights||null}, ${f.lightType||null}, ${f.modifiers||null}, ${f.creative||null}, ${f.shootType||null}, ${f.postProcessing||null}, ${f.extraContext||null}, ${imageUrl}, ${critiqueText})
+      `;
+    } catch (dbErr) {
+      console.error('DB save failed:', dbErr.message);
+    }
+
+    return res.status(200).json({ critique: critiqueText });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });

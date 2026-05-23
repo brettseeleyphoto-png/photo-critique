@@ -20,14 +20,17 @@
     .drop-arrow { font-size: 24px; opacity: 0.25; margin-bottom: 14px; }
     .drop-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.18em; margin-bottom: 4px; }
     .drop-sub { font-size: 11px; color: #444; }
-    #preview-img { width: 100%; display: block; border-radius: 2px; max-height: 400px; object-fit: contain; background: #0f0f0f; margin-bottom: 16px; }
-    .shot-info { margin-top: 18px; border-top: 1px solid #1e1e1e; padding-top: 18px; }
-    .shot-info-title { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 14px; }
-    .field { margin-bottom: 12px; }
+    #preview-img { width: 100%; display: block; border-radius: 2px; max-height: 380px; object-fit: contain; background: #0f0f0f; margin-bottom: 16px; }
+    .form-section { margin-top: 16px; border-top: 1px solid #1e1e1e; padding-top: 16px; }
+    .form-section-title { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 12px; }
+    .required-badge { color: #ef4444; margin-left: 4px; }
+    .field { margin-bottom: 11px; }
     .field label { display: block; font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 5px; }
     .field input, .field select, .field textarea { width: 100%; padding: 8px 10px; background: #0f0f0f; border: 1px solid #1e1e1e; border-radius: 2px; color: #c8c4be; font-size: 12px; font-family: 'Georgia', serif; outline: none; transition: border-color 0.15s; }
     .field input:focus, .field textarea:focus { border-color: #3a3a3a; }
-    .field textarea { resize: vertical; min-height: 60px; line-height: 1.6; }
+    .field input.required-field:focus { border-color: #555; }
+    .field input.field-error { border-color: #ef4444 !important; }
+    .field textarea { resize: vertical; min-height: 56px; line-height: 1.6; }
     .field select { cursor: pointer; }
     .field select option { background: #111; }
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -82,9 +85,24 @@
       <div id="preview-section" style="display:none;">
         <img id="preview-img" src="" alt="Upload" />
 
-        <div class="shot-info">
-          <div class="shot-info-title">Tell the AI about this shot</div>
+        <!-- REQUIRED: Who are you -->
+        <div class="form-section">
+          <div class="form-section-title">Your Info <span class="required-badge">* required</span></div>
+          <div class="field-row">
+            <div class="field">
+              <label>Name <span class="required-badge">*</span></label>
+              <input type="text" id="user-name" class="required-field" placeholder="Your full name" />
+            </div>
+            <div class="field">
+              <label>Email <span class="required-badge">*</span></label>
+              <input type="email" id="user-email" class="required-field" placeholder="your@email.com" />
+            </div>
+          </div>
+        </div>
 
+        <!-- SHOT INFO -->
+        <div class="form-section">
+          <div class="form-section-title">Tell the AI about this shot</div>
           <div class="field-row">
             <div class="field">
               <label>Number of lights</label>
@@ -109,17 +127,14 @@
               </select>
             </div>
           </div>
-
           <div class="field">
             <label>Modifiers used</label>
-            <input type="text" id="modifiers" placeholder="e.g. large softbox, beauty dish, octobox, bare bulb, reflector..." />
+            <input type="text" id="modifiers" placeholder="e.g. large softbox, beauty dish, octobox, bare bulb..." />
           </div>
-
           <div class="field">
             <label>Creative elements / special effects</label>
-            <input type="text" id="creative" placeholder="e.g. metallic body paint, baby oil, glitter, water, smoke, color gels..." />
+            <input type="text" id="creative" placeholder="e.g. metallic body paint, baby oil, glitter, water, smoke..." />
           </div>
-
           <div class="field-row">
             <div class="field">
               <label>Shoot type</label>
@@ -139,17 +154,16 @@
               <select id="post-processing">
                 <option value="">Not specified</option>
                 <option value="Raw / unedited">Raw / unedited</option>
-                <option value="Light edit — basic exposure and color">Light edit</option>
-                <option value="Medium edit — retouched, color graded">Medium edit</option>
-                <option value="Heavy edit — significant retouching, compositing, or artistic processing">Heavy edit</option>
-                <option value="Final delivery image — fully retouched and graded">Final delivery</option>
+                <option value="Light edit">Light edit</option>
+                <option value="Medium edit">Medium edit</option>
+                <option value="Heavy edit">Heavy edit</option>
+                <option value="Final delivery image">Final delivery</option>
               </select>
             </div>
           </div>
-
           <div class="field">
             <label>Anything else the AI should know</label>
-            <textarea id="extra-context" placeholder="e.g. shadows intentionally lifted in edit, shot on location, model is a beginner, inspired by a specific style, intentional mood..."></textarea>
+            <textarea id="extra-context" placeholder="e.g. sun behind model camera right, shadows lifted in edit, model is a beginner..."></textarea>
           </div>
         </div>
 
@@ -172,7 +186,7 @@
     <div id="right-col">
       <div class="placeholder" id="placeholder">
         <div class="placeholder-text">Upload a photo to begin.</div>
-        <div class="placeholder-sub">Fill in shot details for a more accurate critique.</div>
+        <div class="placeholder-sub">Fill in your info and shot details for an accurate critique.</div>
       </div>
       <div class="loading" id="loading" style="display:none;">
         <div class="loading-text">Reading the frame...</div>
@@ -244,24 +258,23 @@
 
   function resetPhoto() {
     imageBase64 = null; imageMimeType = null;
-    ['dropzone'].forEach(function(id) { document.getElementById(id).style.display = 'block'; });
-    ['preview-section','results','loading','error-box'].forEach(function(id) { document.getElementById(id).style.display = 'none'; });
+    document.getElementById('dropzone').style.display = 'block';
+    document.getElementById('preview-section').style.display = 'none';
     document.getElementById('placeholder').style.display = 'block';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error-box').style.display = 'none';
     document.getElementById('file-input').value = '';
     ['num-lights','light-type','shoot-type','post-processing'].forEach(function(id) { document.getElementById(id).value = ''; });
-    ['modifiers','creative','extra-context'].forEach(function(id) { document.getElementById(id).value = ''; });
+    ['modifiers','creative','extra-context','user-name','user-email'].forEach(function(id) { document.getElementById(id).value = ''; });
   }
 
   function buildShotContext() {
     var parts = [];
     var fields = [
-      ['num-lights', 'Lights used'],
-      ['light-type', 'Light type'],
-      ['modifiers', 'Modifiers'],
-      ['creative', 'Creative elements / special effects'],
-      ['shoot-type', 'Shoot type'],
-      ['post-processing', 'Post-processing level'],
-      ['extra-context', 'Additional context']
+      ['num-lights','Lights used'],['light-type','Light type'],['modifiers','Modifiers'],
+      ['creative','Creative elements'],['shoot-type','Shoot type'],
+      ['post-processing','Post-processing level'],['extra-context','Additional context']
     ];
     for (var i = 0; i < fields.length; i++) {
       var val = document.getElementById(fields[i][0]).value.trim();
@@ -271,7 +284,20 @@
   }
 
   function runCritique() {
-    if (!imageBase64) { showError('Image still loading, please wait a moment.'); return; }
+    if (!imageBase64) { showError('Image still loading, please wait.'); return; }
+
+    var name = document.getElementById('user-name').value.trim();
+    var email = document.getElementById('user-email').value.trim();
+
+    // Validate required fields
+    var nameEl = document.getElementById('user-name');
+    var emailEl = document.getElementById('user-email');
+    nameEl.classList.remove('field-error');
+    emailEl.classList.remove('field-error');
+
+    if (!name) { nameEl.classList.add('field-error'); showError('Please enter your name.'); return; }
+    if (!email || email.indexOf('@') === -1) { emailEl.classList.add('field-error'); showError('Please enter a valid email address.'); return; }
+
     var btn = document.getElementById('critique-btn');
     btn.disabled = true; btn.textContent = 'Analyzing...';
     document.getElementById('loading').style.display = 'block';
@@ -279,10 +305,27 @@
     document.getElementById('placeholder').style.display = 'none';
     document.getElementById('error-box').style.display = 'none';
 
+    var shotFields = {
+      numLights: document.getElementById('num-lights').value,
+      lightType: document.getElementById('light-type').value,
+      modifiers: document.getElementById('modifiers').value.trim(),
+      creative: document.getElementById('creative').value.trim(),
+      shootType: document.getElementById('shoot-type').value,
+      postProcessing: document.getElementById('post-processing').value,
+      extraContext: document.getElementById('extra-context').value.trim()
+    };
+
     fetch('/api/critique', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageBase64: imageBase64, mimeType: imageMimeType, shotContext: buildShotContext() })
+      body: JSON.stringify({
+        imageBase64: imageBase64,
+        mimeType: imageMimeType,
+        shotContext: buildShotContext(),
+        name: name,
+        email: email,
+        shotFields: shotFields
+      })
     })
     .then(function(res) { return res.json(); })
     .then(function(data) {
@@ -335,4 +378,3 @@
 </script>
 </body>
 </html>
-<!-- cache bust Fri May 22 23:49:29 UTC 2026 -->

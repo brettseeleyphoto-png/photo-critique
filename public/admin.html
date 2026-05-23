@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seeley Photo Critique — Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; background: #090909; color: #e2ddd7; font-family: 'Georgia', serif; }
+    header { border-bottom: 1px solid #2a2a2a; padding: 20px 36px; display: flex; align-items: center; gap: 12px; }
+    .header-brand { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.2em; }
+    .header-divider { width: 1px; height: 12px; background: #333; }
+    .header-title { font-size: 16px; color: #aaa49e; }
+    .header-count { margin-left: auto; font-size: 11px; color: #555; }
+    main { max-width: 1200px; margin: 0 auto; padding: 40px 36px; }
+
+    /* Login */
+    #login-screen { max-width: 380px; margin: 80px auto; padding: 36px; border: 1px solid #1e1e1e; border-radius: 2px; }
+    .login-title { font-size: 16px; color: #aaa49e; margin-bottom: 6px; }
+    .login-sub { font-size: 12px; color: #444; margin-bottom: 24px; }
+    input[type=password] { width: 100%; padding: 10px 12px; background: #0f0f0f; border: 1px solid #1e1e1e; border-radius: 2px; color: #e2ddd7; font-size: 13px; font-family: monospace; outline: none; margin-bottom: 10px; }
+    .btn { width: 100%; padding: 12px; background: #e2ddd7; color: #090909; border: none; border-radius: 2px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; cursor: pointer; font-family: 'Georgia', serif; }
+    .err { margin-top: 8px; font-size: 12px; color: #ef4444; }
+
+    /* Stats bar */
+    .stats { display: flex; gap: 32px; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #1a1a1a; }
+    .stat-item { }
+    .stat-num { font-size: 28px; color: #c8c0b4; }
+    .stat-label { font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 0.15em; margin-top: 2px; }
+
+    /* Submissions grid */
+    .submissions { display: flex; flex-direction: column; gap: 24px; }
+    .submission { border: 1px solid #1a1a1a; border-radius: 2px; overflow: hidden; }
+    .sub-header { padding: 16px 20px; background: #0e0e0e; border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .sub-name { font-size: 14px; color: #c8c0b4; }
+    .sub-email { font-size: 12px; color: #555; }
+    .sub-date { margin-left: auto; font-size: 11px; color: #3a3a3a; }
+    .sub-body { display: grid; grid-template-columns: 240px 1fr; }
+    @media (max-width: 700px) { .sub-body { grid-template-columns: 1fr; } }
+    .sub-image { background: #0a0a0a; }
+    .sub-image img { width: 100%; height: 100%; object-fit: cover; max-height: 320px; display: block; }
+    .sub-image .no-img { padding: 40px; text-align: center; font-size: 11px; color: #2a2a2a; text-transform: uppercase; letter-spacing: 0.15em; }
+    .sub-right { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+    .shot-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .field-item { }
+    .field-label { font-size: 9px; color: #3a3a3a; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 2px; }
+    .field-value { font-size: 12px; color: #666; }
+    .critique-section { border-top: 1px solid #141414; padding-top: 16px; }
+    .critique-label { font-size: 9px; color: #3a3a3a; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 10px; }
+    .critique-text { font-size: 12px; color: #5a5248; line-height: 1.8; white-space: pre-wrap; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 1px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; margin-right: 6px; }
+  </style>
+</head>
+<body>
+<header>
+  <span class="header-brand">Seeley Photo Critique</span>
+  <span class="header-divider"></span>
+  <span class="header-title">Admin Dashboard</span>
+  <span class="header-count" id="header-count"></span>
+</header>
+<main>
+  <div id="login-screen">
+    <div class="login-title">Admin Access</div>
+    <div class="login-sub">Enter your admin password to view submissions.</div>
+    <input type="password" id="pwd-input" placeholder="Password" />
+    <button class="btn" onclick="loadSubmissions()">Enter</button>
+    <div class="err" id="login-err"></div>
+  </div>
+
+  <div id="dashboard" style="display:none;">
+    <div class="stats">
+      <div class="stat-item">
+        <div class="stat-num" id="total-count">—</div>
+        <div class="stat-label">Total Submissions</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" id="unique-users">—</div>
+        <div class="stat-label">Unique Users</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" id="today-count">—</div>
+        <div class="stat-label">Today</div>
+      </div>
+    </div>
+    <div class="submissions" id="submissions-list"></div>
+  </div>
+</main>
+
+<script>
+  var password = '';
+
+  document.getElementById('pwd-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') loadSubmissions();
+  });
+
+  function loadSubmissions() {
+    password = document.getElementById('pwd-input').value;
+    fetch('/api/admin?password=' + encodeURIComponent(password))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error) { document.getElementById('login-err').textContent = data.error; return; }
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        renderDashboard(data.submissions);
+      })
+      .catch(function(e) { document.getElementById('login-err').textContent = 'Error: ' + e.message; });
+  }
+
+  function renderDashboard(subs) {
+    var total = subs.length;
+    var uniqueEmails = new Set(subs.map(function(s) { return s.email; })).size;
+    var today = new Date().toDateString();
+    var todayCount = subs.filter(function(s) { return new Date(s.created_at).toDateString() === today; }).length;
+
+    document.getElementById('total-count').textContent = total;
+    document.getElementById('unique-users').textContent = uniqueEmails;
+    document.getElementById('today-count').textContent = todayCount;
+    document.getElementById('header-count').textContent = total + ' submission' + (total !== 1 ? 's' : '');
+
+    var list = document.getElementById('submissions-list');
+    list.innerHTML = '';
+
+    subs.forEach(function(s) {
+      var date = new Date(s.created_at).toLocaleString();
+      var div = document.createElement('div');
+      div.className = 'submission';
+      div.innerHTML =
+        '<div class="sub-header">' +
+          '<div class="sub-name">' + esc(s.name) + '</div>' +
+          '<div class="sub-email">' + esc(s.email) + '</div>' +
+          '<div class="sub-date">' + date + '</div>' +
+        '</div>' +
+        '<div class="sub-body">' +
+          '<div class="sub-image">' +
+            (s.image_url
+              ? '<img src="' + esc(s.image_url) + '" alt="Submission" />'
+              : '<div class="no-img">No image saved</div>') +
+          '</div>' +
+          '<div class="sub-right">' +
+            '<div class="shot-fields">' +
+              field('Lights', s.num_lights) +
+              field('Light Type', s.light_type) +
+              field('Modifiers', s.modifiers) +
+              field('Creative Elements', s.creative) +
+              field('Shoot Type', s.shoot_type) +
+              field('Post-Processing', s.post_processing) +
+              (s.extra_context ? '<div class="field-item" style="grid-column:1/-1">' + field('Additional Context', s.extra_context) + '</div>' : '') +
+            '</div>' +
+            '<div class="critique-section">' +
+              '<div class="critique-label">Critique</div>' +
+              '<div class="critique-text">' + esc(s.critique) + '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      list.appendChild(div);
+    });
+
+    if (subs.length === 0) {
+      list.innerHTML = '<div style="text-align:center;padding:60px;font-size:12px;color:#333;">No submissions yet.</div>';
+    }
+  }
+
+  function field(label, value) {
+    if (!value) return '';
+    return '<div class="field-item"><div class="field-label">' + label + '</div><div class="field-value">' + esc(value) + '</div></div>';
+  }
+
+  function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
