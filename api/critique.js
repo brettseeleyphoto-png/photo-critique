@@ -99,6 +99,9 @@ async function initDb(sql) {
       original_mime_type TEXT,
       storage_provider TEXT,
       storage_error TEXT,
+      feedback_token TEXT,
+      ai_feedback_ratings JSONB,
+      feedback_submitted_at TIMESTAMP,
       brett_correction TEXT,
       brett_correction_status TEXT DEFAULT 'pending',
       brett_corrected_at TIMESTAMP,
@@ -112,6 +115,9 @@ async function initDb(sql) {
   await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS original_mime_type TEXT`;
   await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS storage_provider TEXT`;
   await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS storage_error TEXT`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS feedback_token TEXT`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS ai_feedback_ratings JSONB`;
+  await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS feedback_submitted_at TIMESTAMP`;
   await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_correction TEXT`;
   await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_correction_status TEXT DEFAULT 'pending'`;
   await sql`ALTER TABLE critiques ADD COLUMN IF NOT EXISTS brett_corrected_at TIMESTAMP`;
@@ -206,22 +212,27 @@ module.exports = async function handler(req, res) {
 
     // Save to Neon database
     let dbError = null;
+    let critiqueId = null;
+    let feedbackToken = null;
     try {
       const sql = neon(process.env.DATABASE_URL);
       await initDb(sql);
       const f = shotFields || {};
-      await sql`
+      feedbackToken = crypto.randomUUID();
+      const rows = await sql`
         INSERT INTO critiques (
           name, email, num_lights, light_type, modifiers, creative, shoot_type, post_processing, extra_context,
           image_url, image_pathname, image_mime_type, image_size_bytes, original_filename, original_mime_type,
-          storage_provider, storage_error, critique
+          storage_provider, storage_error, feedback_token, critique
         )
         VALUES (
           ${name}, ${email}, ${f.numLights||null}, ${f.lightType||null}, ${f.modifiers||null}, ${f.creative||null}, ${f.shootType||null}, ${f.postProcessing||null}, ${f.extraContext||null},
           ${imageUrl}, ${imagePathname}, ${mimeType}, ${imageBuffer.length}, ${originalFilename || null}, ${originalMimeType || null},
-          ${imageUrl ? 'vercel_blob' : null}, ${storageError}, ${critiqueText}
+          ${imageUrl ? 'vercel_blob' : null}, ${storageError}, ${feedbackToken}, ${critiqueText}
         )
+        RETURNING id
       `;
+      critiqueId = rows[0]?.id || null;
     } catch (dbErr) {
       dbError = dbErr.message || 'Unknown database save error';
       console.error('DB save failed:', dbError);
@@ -229,6 +240,8 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       critique: critiqueText,
+      critiqueId,
+      feedbackToken,
       saved: !storageError && !dbError,
       storageError: storageError ? 'The critique was generated, but the image could not be saved for admin review.' : null,
       saveError: dbError ? 'The critique was generated, but the submission could not be saved for admin review.' : null,

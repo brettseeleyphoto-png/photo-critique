@@ -307,9 +307,16 @@
     .section:last-child { margin-bottom: 0; }
     .section-header {
       display: flex;
+      justify-content: space-between;
       align-items: center;
       gap: 10px;
       margin-bottom: 10px;
+    }
+    .section-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
     }
     .section-bar {
       width: 28px;
@@ -322,6 +329,42 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: .17em;
+    }
+    .section-rating {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .rating-label {
+      color: var(--faint);
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: .13em;
+      white-space: nowrap;
+    }
+    .rating-buttons {
+      display: flex;
+      gap: 3px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .rating-btn {
+      width: 24px;
+      height: 24px;
+      border: 1px solid #2b2823;
+      background: #0b0a09;
+      color: var(--muted);
+      font-size: 10px;
+      font-family: Georgia, "Times New Roman", serif;
+      cursor: pointer;
+      transition: border-color .15s ease, background .15s ease, color .15s ease;
+    }
+    .rating-btn:hover, .rating-btn.active {
+      border-color: var(--amber);
+      background: rgba(192,138,76,.18);
+      color: var(--bone);
     }
     .section-content {
       color: #b4aa9e;
@@ -378,6 +421,35 @@
       margin-bottom: 9px;
     }
     .placeholder-sub { color: var(--faint); font-size: 12px; line-height: 1.6; }
+    .learning-panel {
+      margin-top: 18px;
+      padding: 18px;
+      border: 1px solid rgba(192,138,76,.36);
+      background:
+        linear-gradient(90deg, rgba(192,138,76,.12), transparent 44%),
+        rgba(8,7,6,.6);
+    }
+    .learning-title {
+      color: var(--bone);
+      font-size: 18px;
+      line-height: 1.2;
+      margin-bottom: 9px;
+    }
+    .learning-copy {
+      color: #a79c90;
+      font-size: 13px;
+      line-height: 1.7;
+      margin-bottom: 14px;
+    }
+    .feedback-status {
+      min-height: 18px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .feedback-status.success { color: var(--green); }
+    .feedback-status.error { color: #ff958a; }
     #file-input { display: none; }
     @media (max-width: 980px) {
       header { padding: 16px 20px; flex-wrap: wrap; }
@@ -395,6 +467,8 @@
       .field-row, .btn-row { grid-template-columns: 1fr; }
       .btn-secondary { width: 100%; }
       .section { padding: 16px; }
+      .section-header { display: block; }
+      .section-rating { justify-content: flex-start; margin-top: 12px; }
     }
   </style>
 </head>
@@ -553,6 +627,9 @@
   var imageMimeType = null;
   var originalFilename = null;
   var originalMimeType = null;
+  var currentCritiqueId = null;
+  var currentFeedbackToken = null;
+  var sectionRatings = {};
   var MAX_ORIGINAL_BYTES = 25 * 1024 * 1024;
   var MAX_COMPRESSED_BYTES = 4 * 1024 * 1024;
   var ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -635,6 +712,7 @@
 
   function resetPhoto() {
     imageBase64 = null; imageMimeType = null; originalFilename = null; originalMimeType = null;
+    currentCritiqueId = null; currentFeedbackToken = null; sectionRatings = {};
     document.getElementById('dropzone').style.display = 'block';
     document.getElementById('preview-section').style.display = 'none';
     document.getElementById('placeholder').style.display = 'block';
@@ -709,6 +787,9 @@
     .then(function(res) { return res.json(); })
     .then(function(data) {
       if (data.error) throw new Error(data.error);
+      currentCritiqueId = data.critiqueId || null;
+      currentFeedbackToken = data.feedbackToken || null;
+      sectionRatings = {};
       renderCritique(data.critique);
       if (data.storageError) showError(data.storageError);
       if (data.saveError) showError(data.saveError);
@@ -751,10 +832,99 @@
       var color = SECTION_COLORS[s.title] || '#888';
       var div = document.createElement('div');
       div.className = 'section' + (s.title === 'YOUR ONE PRIORITY' ? ' section-priority' : '');
-      div.innerHTML = '<div class="section-header"><div class="section-bar" style="background:' + color + '"></div><div class="section-title" style="color:' + color + '">' + s.title + '</div></div><div class="section-content">' + s.content + '</div>';
+      div.innerHTML =
+        '<div class="section-header">' +
+          '<div class="section-title-wrap">' +
+            '<div class="section-bar" style="background:' + color + '"></div>' +
+            '<div class="section-title" style="color:' + color + '">' + escHtml(s.title) + '</div>' +
+          '</div>' +
+          ratingControl(s.title) +
+        '</div>' +
+        '<div class="section-content">' + escHtml(s.content) + '</div>';
       container.appendChild(div);
     }
+    container.appendChild(learningPanel());
+    attachRatingHandlers();
     container.style.display = 'block';
+  }
+
+  function ratingControl(sectionTitle) {
+    var encoded = encodeURIComponent(sectionTitle);
+    var html = '<div class="section-rating"><div class="rating-label">Agree 1-10</div><div class="rating-buttons">';
+    for (var i = 1; i <= 10; i++) {
+      html += '<button type="button" class="rating-btn" data-section="' + encoded + '" data-rating="' + i + '">' + i + '</button>';
+    }
+    html += '</div></div>';
+    return html;
+  }
+
+  function learningPanel() {
+    var div = document.createElement('div');
+    div.className = 'learning-panel';
+    div.innerHTML =
+      '<div class="panel-kicker">Learning Phase</div>' +
+      '<div class="learning-title">This review is still being trained.</div>' +
+      '<div class="learning-copy">This critique is part of a learning phase for the review process. It is 100% likely that the AI critique is not 100% accurate. Rate how much you agree with each section above. Brett will personally review submissions and can provide an updated human review.</div>' +
+      '<button class="btn-primary" type="button" id="feedback-submit">Submit Ratings For Brett Review</button>' +
+      '<div class="feedback-status" id="feedback-status"></div>';
+    return div;
+  }
+
+  function attachRatingHandlers() {
+    var buttons = document.querySelectorAll('.rating-btn');
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].addEventListener('click', function(e) {
+        var btn = e.currentTarget;
+        var section = decodeURIComponent(btn.getAttribute('data-section'));
+        var rating = Number(btn.getAttribute('data-rating'));
+        sectionRatings[section] = rating;
+        var peers = document.querySelectorAll('.rating-btn[data-section="' + btn.getAttribute('data-section') + '"]');
+        for (var j = 0; j < peers.length; j++) peers[j].classList.remove('active');
+        btn.classList.add('active');
+      });
+    }
+    var submit = document.getElementById('feedback-submit');
+    if (submit) submit.addEventListener('click', submitFeedbackRatings);
+  }
+
+  function submitFeedbackRatings() {
+    var status = document.getElementById('feedback-status');
+    if (!currentCritiqueId || !currentFeedbackToken) {
+      status.className = 'feedback-status error';
+      status.textContent = 'This critique was generated, but the feedback reference was not saved.';
+      return;
+    }
+    if (!Object.keys(sectionRatings).length) {
+      status.className = 'feedback-status error';
+      status.textContent = 'Choose at least one section rating first.';
+      return;
+    }
+    status.className = 'feedback-status';
+    status.textContent = 'Saving ratings...';
+    fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        critiqueId: currentCritiqueId,
+        feedbackToken: currentFeedbackToken,
+        ratings: sectionRatings
+      })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.error) throw new Error(data.error);
+      status.className = 'feedback-status success';
+      status.textContent = 'Ratings saved. Brett can use this when reviewing your submission.';
+    })
+    .catch(function(err) {
+      status.className = 'feedback-status error';
+      status.textContent = 'Could not save ratings: ' + err.message;
+    });
+  }
+
+  function escHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 </script>
 </body>

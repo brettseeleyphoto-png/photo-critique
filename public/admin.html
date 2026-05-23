@@ -49,6 +49,17 @@
     .critique-section { border-top: 1px solid #141414; padding-top: 16px; }
     .critique-label { font-size: 9px; color: #3a3a3a; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 10px; }
     .critique-text { font-size: 12px; color: #5a5248; line-height: 1.8; white-space: pre-wrap; }
+    .feedback-section { border-top: 1px solid #141414; padding-top: 16px; }
+    .rating-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .rating-chip { border: 1px solid #272019; padding: 6px 8px; font-size: 11px; color: #8a8175; background: #0b0a09; }
+    .rating-chip strong { color: #c8c0b4; font-weight: normal; }
+    .brett-review { border-top: 1px solid #141414; padding-top: 16px; }
+    .brett-review textarea { width: 100%; min-height: 130px; padding: 10px 12px; background: #0f0f0f; border: 1px solid #1e1e1e; color: #c8c4be; font-size: 12px; line-height: 1.6; font-family: Georgia, serif; resize: vertical; outline: none; }
+    .brett-review textarea:focus { border-color: #3a3a3a; }
+    .mini-btn { margin-top: 8px; padding: 8px 11px; background: #c8c0b4; color: #090909; border: none; font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; cursor: pointer; font-family: Georgia, serif; }
+    .save-status { margin-top: 7px; min-height: 16px; color: #555; font-size: 11px; }
+    .save-status.ok { color: #8fbf85; }
+    .save-status.err { color: #b45353; }
     .tag { display: inline-block; padding: 2px 8px; border-radius: 1px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; margin-right: 6px; }
   </style>
 </head>
@@ -151,6 +162,16 @@
               '<div class="critique-label">Critique</div>' +
               '<div class="critique-text">' + esc(s.critique).replace(/\*\*/g, '') + '</div>' +
             '</div>' +
+            '<div class="feedback-section">' +
+              '<div class="critique-label">User Agreement Ratings</div>' +
+              feedbackMarkup(s) +
+            '</div>' +
+            '<div class="brett-review">' +
+              '<div class="critique-label">Brett Updated Review</div>' +
+              '<textarea id="brett-review-' + s.id + '" placeholder="Write Brett&apos;s corrected human review here.">' + escTextarea(s.brett_correction) + '</textarea>' +
+              '<button class="mini-btn" onclick="saveBrettReview(' + s.id + ')">Save Updated Review</button>' +
+              '<div class="save-status" id="save-status-' + s.id + '">' + reviewStatusText(s) + '</div>' +
+            '</div>' +
           '</div>' +
         '</div>';
       list.appendChild(div);
@@ -181,9 +202,63 @@
     return html;
   }
 
+  function feedbackMarkup(s) {
+    var ratings = s.ai_feedback_ratings || {};
+    if (typeof ratings === 'string') {
+      try { ratings = JSON.parse(ratings); } catch (e) { ratings = {}; }
+    }
+    var keys = Object.keys(ratings);
+    if (!keys.length) return '<div class="field-value">No section ratings submitted yet.</div>';
+    var html = '<div class="rating-list">';
+    keys.forEach(function(key) {
+      html += '<div class="rating-chip">' + esc(key) + ': <strong>' + esc(ratings[key]) + '/10</strong></div>';
+    });
+    html += '</div>';
+    if (s.feedback_submitted_at) {
+      html += '<div class="field-value" style="margin-top:8px;">Submitted ' + new Date(s.feedback_submitted_at).toLocaleString() + '</div>';
+    }
+    return html;
+  }
+
+  function reviewStatusText(s) {
+    if (s.brett_corrected_at) return 'Saved ' + new Date(s.brett_corrected_at).toLocaleString();
+    return s.brett_correction_status === 'reviewed' ? 'Saved' : '';
+  }
+
+  function saveBrettReview(id) {
+    var textarea = document.getElementById('brett-review-' + id);
+    var status = document.getElementById('save-status-' + id);
+    status.className = 'save-status';
+    status.textContent = 'Saving...';
+    fetch('/api/brett-review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        password: password,
+        critiqueId: id,
+        correction: textarea.value
+      })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) throw new Error(data.error);
+      status.className = 'save-status ok';
+      status.textContent = 'Updated review saved.';
+    })
+    .catch(function(e) {
+      status.className = 'save-status err';
+      status.textContent = 'Error: ' + e.message;
+    });
+  }
+
   function esc(str) {
     if (!str) return '';
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function escTextarea(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 </script>
 </body>
