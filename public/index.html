@@ -633,6 +633,8 @@
   var MAX_ORIGINAL_BYTES = 25 * 1024 * 1024;
   var MAX_COMPRESSED_BYTES = 4 * 1024 * 1024;
   var ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  var PRODUCTION_ORIGIN = 'https://photo-critique-psi.vercel.app';
+  var API_ORIGIN = (location.protocol === 'file:' || location.hostname === '127.0.0.1' || location.hostname === 'localhost') ? PRODUCTION_ORIGIN : '';
 
   var SECTION_COLORS = {
     "WHAT'S WORKING": "#4ade80",
@@ -770,7 +772,7 @@
       extraContext: document.getElementById('extra-context').value.trim()
     };
 
-    fetch('/api/critique', {
+    fetch(apiPath('/api/critique'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -784,7 +786,7 @@
         shotFields: shotFields
       })
     })
-    .then(function(res) { return res.json(); })
+    .then(readJsonResponse)
     .then(function(data) {
       if (data.error) throw new Error(data.error);
       currentCritiqueId = data.critiqueId || null;
@@ -901,7 +903,7 @@
     }
     status.className = 'feedback-status';
     status.textContent = 'Saving ratings...';
-    fetch('/api/feedback', {
+    fetch(apiPath('/api/feedback'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -910,7 +912,7 @@
         ratings: sectionRatings
       })
     })
-    .then(function(res) { return res.json(); })
+    .then(readJsonResponse)
     .then(function(data) {
       if (data.error) throw new Error(data.error);
       status.className = 'feedback-status success';
@@ -925,6 +927,24 @@
   function escHtml(str) {
     if (!str) return '';
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function apiPath(path) {
+    return API_ORIGIN + path;
+  }
+
+  function readJsonResponse(res) {
+    return res.text().then(function(text) {
+      var data = {};
+      if (text) {
+        try { data = JSON.parse(text); }
+        catch (e) {
+          throw new Error('The critique service did not return a valid response. Please open the deployed app or try again.');
+        }
+      }
+      if (!res.ok) throw new Error(data.error || 'The critique request failed.');
+      return data;
+    });
   }
 </script>
 </body>

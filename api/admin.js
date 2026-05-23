@@ -1,5 +1,13 @@
 const { neon } = require('@neondatabase/serverless');
 
+function applyCors(req, res) {
+  const origin = req.headers.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Vary', 'Origin');
+}
+
 async function ensureSchema(sql) {
   await sql`
     CREATE TABLE IF NOT EXISTS critiques (
@@ -34,6 +42,8 @@ async function ensureSchema(sql) {
 }
 
 module.exports = async function handler(req, res) {
+  applyCors(req, res);
+  if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const { password } = req.query;

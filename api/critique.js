@@ -6,6 +6,14 @@ const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 const BLOB_ACCESS = 'private';
 
+function applyCors(req, res) {
+  const origin = req.headers.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Vary', 'Origin');
+}
+
 const BRETT_SYSTEM_PROMPT = `You are Brett Seeley's photo critique engine. Brett is a veteran fitness photographer with 17+ years of experience. You analyze photos using his exact standards and voice.
 
 CRITICAL RULES — FOLLOW THESE BEFORE WRITING ANYTHING:
@@ -138,6 +146,8 @@ function extensionForMime(mimeType) {
 }
 
 module.exports = async function handler(req, res) {
+  applyCors(req, res);
+  if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { imageBase64, mimeType, originalFilename, originalMimeType, shotContext, name, email, shotFields } = req.body;

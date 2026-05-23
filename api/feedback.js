@@ -1,5 +1,13 @@
 const { neon } = require('@neondatabase/serverless');
 
+function applyCors(req, res) {
+  const origin = req.headers.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Vary', 'Origin');
+}
+
 const VALID_SECTIONS = new Set([
   "WHAT'S WORKING",
   'LIGHTING',
@@ -33,6 +41,8 @@ function cleanRatings(raw) {
 }
 
 module.exports = async function handler(req, res) {
+  applyCors(req, res);
+  if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { critiqueId, feedbackToken, ratings } = req.body || {};
