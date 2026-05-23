@@ -148,7 +148,7 @@
             '</div>' +
             '<div class="critique-section">' +
               '<div class="critique-label">Critique</div>' +
-              '<div class="critique-text">' + esc(s.critique) + '</div>' +
+              '<div class="critique-text">' + esc(s.critique).replace(/\*\*/g, '') + '</div>' +
             '</div>' +
           '</div>' +
         '</div>';
@@ -172,3 +172,7 @@
 </script>
 </body>
 </html>
+<script>
+// Fix: strip ** markers from critique display
+var orig = window.renderCritique || null;
+</script>
