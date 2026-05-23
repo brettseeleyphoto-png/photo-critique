@@ -57,6 +57,7 @@
     .brett-review textarea { width: 100%; min-height: 130px; padding: 10px 12px; background: #0f0f0f; border: 1px solid #1e1e1e; color: #c8c4be; font-size: 12px; line-height: 1.6; font-family: Georgia, serif; resize: vertical; outline: none; }
     .brett-review textarea:focus { border-color: #3a3a3a; }
     .mini-btn { margin-top: 8px; padding: 8px 11px; background: #c8c0b4; color: #090909; border: none; font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; cursor: pointer; font-family: Georgia, serif; }
+    .email-draft-link { display: inline-block; margin: 8px 0 0 8px; padding: 8px 11px; border: 1px solid #2a241f; color: #c8c0b4; text-decoration: none; font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; }
     .save-status { margin-top: 7px; min-height: 16px; color: #555; font-size: 11px; }
     .save-status.ok { color: #8fbf85; }
     .save-status.err { color: #b45353; }
@@ -121,6 +122,7 @@
   }
 
   function renderDashboard(subs) {
+    window.currentSubmissions = subs;
     var total = subs.length;
     var uniqueEmails = new Set(subs.map(function(s) { return s.email; })).size;
     var today = new Date().toDateString();
@@ -172,6 +174,7 @@
               '<div class="critique-label">Brett Updated Review</div>' +
               '<textarea id="brett-review-' + s.id + '" placeholder="Write Brett&apos;s corrected human review here.">' + escTextarea(s.brett_correction) + '</textarea>' +
               '<button class="mini-btn" onclick="saveBrettReview(' + s.id + ')">Save + Email Updated Review</button>' +
+              '<span id="draft-link-wrap-' + s.id + '">' + draftEmailLink(s, s.brett_correction) + '</span>' +
               '<div class="save-status" id="save-status-' + s.id + '">' + reviewStatusText(s) + emailStatusText(s) + '</div>' +
             '</div>' +
           '</div>' +
@@ -227,6 +230,27 @@
     return s.brett_correction_status === 'reviewed' ? 'Saved' : '';
   }
 
+  function draftEmailLink(s, correction) {
+    if (!s.email || !correction) return '';
+    return '<a class="email-draft-link" href="' + mailtoHref(s, correction) + '">Draft Email Manually</a>';
+  }
+
+  function mailtoHref(s, correction) {
+    var subject = 'Your updated photo critique from Brett';
+    var body = [
+      'Hi ' + (s.name || 'there') + ',',
+      '',
+      'Brett reviewed your photo critique submission and added an updated human review below.',
+      '',
+      correction,
+      '',
+      'Thank you for helping improve the critique process.',
+      '',
+      'Seeley Photo Critique'
+    ].join('\n');
+    return 'mailto:' + encodeURIComponent(s.email) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  }
+
   function emailStatusText(s) {
     if (s.brett_email_sent_at) return '<br>Email sent ' + new Date(s.brett_email_sent_at).toLocaleString();
     if (s.brett_email_error) return '<br>Email not sent: ' + esc(s.brett_email_error);
@@ -236,6 +260,9 @@
   function saveBrettReview(id) {
     var textarea = document.getElementById('brett-review-' + id);
     var status = document.getElementById('save-status-' + id);
+    var submission = currentSubmission(id);
+    var draftWrap = document.getElementById('draft-link-wrap-' + id);
+    if (draftWrap && submission) draftWrap.innerHTML = draftEmailLink(submission, textarea.value);
     status.className = 'save-status';
     status.textContent = 'Saving...';
     fetch(apiPath('/api/brett-review'), {
@@ -275,6 +302,14 @@
   function escTextarea(str) {
     if (!str) return '';
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function currentSubmission(id) {
+    var subs = window.currentSubmissions || [];
+    for (var i = 0; i < subs.length; i++) {
+      if (Number(subs[i].id) === Number(id)) return subs[i];
+    }
+    return null;
   }
 
   function apiPath(path) {
